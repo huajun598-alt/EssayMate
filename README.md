@@ -22,7 +22,7 @@ EssayMate turns English writing practice into a structured loop:
 
 Try EssayMate online:
 
-[Open EssayMate Demo](https://essaymate-p4idymd2qbyxf3kuwsbrk.streamlit.app)
+[Open EssayMate Demo](https://essaymate-p4idtymd2qbyxf3kuwsbrk.streamlit.app)
 
 No installation required.
 
