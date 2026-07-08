@@ -20,15 +20,11 @@ EssayMate turns English writing practice into a structured loop:
 
 ## Live Demo
 
-### Live Demo: Coming Soon
+Try EssayMate online:
 
-This repository is ready for local demo and Streamlit Cloud deployment.
+[Open EssayMate Demo](https://essaymate-p4jdymd2qbyxf3kuwsbrk.streamlit.app)
 
-Run locally:
-
-```bash
-streamlit run app.py
-```
+No installation required.
 
 <br>
 
