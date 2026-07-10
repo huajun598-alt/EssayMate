@@ -1,0 +1,51 @@
+name: Keep Streamlit Demo Alive
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. Runs at 00:00, 03:00, 06:00, etc.
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request Streamlit demo
+        shell: bash
+        run: |
+          url="https://essaymate-p4idtymd2qbyxf3kuwsbrk.streamlit.app/"
+          timestamp="$(date --utc '+%Y-%m-%dT%H:%M:%SZ')"
+
+          echo "Current time (UTC): ${timestamp}"
+          echo "Request URL: ${url}"
+
+          # Do not fail the job if the demo is temporarily unavailable.
+          set +e
+          result=$(curl --silent --show-error --location --output /dev/null \
+            --connect-timeout 30 --max-time 60 \
+            --write-out '%{http_code} %{time_total}' \
+            "${url}" 2>&1)
+          curl_exit_code=$?
+          set -e
+
+          if [ "${curl_exit_code}" -eq 0 ]; then
+            http_status=$(awk '{print $(NF-1)}' <<< "${result}")
+            response_time=$(awk '{print $NF}' <<< "${result}")
+            echo "HTTP status: ${http_status}"
+            echo "Response time: ${response_time}s"
+
+            if [ "${http_status}" -ge 200 ] && [ "${http_status}" -lt 400 ]; then
+              echo "Request successful: yes"
+            else
+              echo "Request successful: no"
+              echo "Failure reason: received HTTP status ${http_status}"
+            fi
+          else
+            echo "HTTP status: unavailable"
+            echo "Response time: unavailable"
+            echo "Request successful: no"
+            echo "Failure reason: curl exited with code ${curl_exit_code}: ${result}"
+          fi
