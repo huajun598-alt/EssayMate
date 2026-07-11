@@ -2,8 +2,8 @@ name: Keep Streamlit Demo Alive
 
 on:
   schedule:
-    # GitHub Actions cron uses UTC. Runs at 00:00, 03:00, 06:00, etc.
-    - cron: "0 */3 * * *"
+    # GitHub Actions cron uses UTC. Avoid the busy start of the hour.
+    - cron: "17 */3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -18,13 +18,15 @@ jobs:
         run: |
           url="https://essaymate-p4idtymd2qbyxf3kuwsbrk.streamlit.app/"
           timestamp="$(date --utc '+%Y-%m-%dT%H:%M:%SZ')"
+          response_body="$(mktemp)"
+          trap 'rm -f "${response_body}"' EXIT
 
           echo "Current time (UTC): ${timestamp}"
           echo "Request URL: ${url}"
 
           # Do not fail the job if the demo is temporarily unavailable.
           set +e
-          result=$(curl --silent --show-error --location --output /dev/null \
+          result=$(curl --silent --show-error --location --output "${response_body}" \
             --connect-timeout 30 --max-time 60 \
             --write-out '%{http_code} %{time_total}' \
             "${url}" 2>&1)
@@ -37,15 +39,26 @@ jobs:
             echo "HTTP status: ${http_status}"
             echo "Response time: ${response_time}s"
 
-            if [ "${http_status}" -ge 200 ] && [ "${http_status}" -lt 400 ]; then
+            if grep --quiet --ignore-case "gone to sleep due to inactivity" "${response_body}"; then
+              echo "Application state: sleeping"
+              echo "Request successful: no"
+              echo "Failure reason: Streamlit returned its sleeping page"
+            elif grep --quiet --ignore-case "error running app" "${response_body}"; then
+              echo "Application state: error"
+              echo "Request successful: no"
+              echo "Failure reason: Streamlit returned its application error page"
+            elif [ "${http_status}" -ge 200 ] && [ "${http_status}" -lt 400 ]; then
+              echo "Application state: awake"
               echo "Request successful: yes"
             else
+              echo "Application state: unavailable"
               echo "Request successful: no"
               echo "Failure reason: received HTTP status ${http_status}"
             fi
           else
             echo "HTTP status: unavailable"
             echo "Response time: unavailable"
+            echo "Application state: unavailable"
             echo "Request successful: no"
             echo "Failure reason: curl exited with code ${curl_exit_code}: ${result}"
           fi
