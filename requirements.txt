@@ -1,3 +1,5 @@
-# Pin deployment dependencies to avoid unplanned upgrades.
-streamlit==1.59.1
-pandas==3.0.3
+# Stable Python 3.12 dependency set for Streamlit Community Cloud.
+streamlit==1.42.2
+pandas==2.2.3
+numpy==1.26.4
+pyarrow==17.0.0
